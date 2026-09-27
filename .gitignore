@@ -1,0 +1,19 @@
+# Dependencies and generated test output
+node_modules/
+test-results/
+playwright-report/
+
+# Local environment and editor files
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Local tooling
+AGENTS.md
+*_PROMPT.md
+.agents/
+.codex/

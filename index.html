@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data:; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'self'; worker-src 'self'">
+  <title>Image Prep</title>
+  <meta name="description" content="Bilder lokal im Browser zuschneiden, skalieren und exportieren. Keine Uploads.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./assets/icon-192.png" sizes="192x192">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">Local-only Web Tool</p>
+      <h1>Image Prep</h1>
+      <p class="lede">Profilbilder und Share-Previews zuschneiden, skalieren und exportieren – direkt im Browser.</p>
+    </div>
+    <p class="privacy-badge" aria-label="Datenschutz: keine Uploads">Keine Uploads · kein Tracking</p>
+  </header>
+
+  <main class="app-shell">
+    <section class="panel controls" aria-labelledby="source-title">
+      <h2 id="source-title">1. Bild wählen</h2>
+      <input id="image-input" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="file-requirements">
+      <label class="file-drop" for="image-input">
+        <span>Bild auswählen</span>
+        <small>JPEG, PNG oder WebP · maximal 25 MB / 40 MP</small>
+      </label>
+      <p id="file-requirements" class="hint">Sehr große oder stark komprimierte Bilder können viel Arbeitsspeicher benötigen und werden deshalb begrenzt.</p>
+      <p id="file-meta" class="meta" aria-live="polite">Noch kein Bild geladen.</p>
+
+      <h2>2. Preset</h2>
+      <div class="preset-grid" role="group" aria-label="Bildformat wählen">
+        <button type="button" class="preset active" data-preset="profile-m" aria-pressed="true">Profil · 800×800</button>
+        <button type="button" class="preset" data-preset="profile-l" aria-pressed="false">Profil · 1024×1024</button>
+        <button type="button" class="preset" data-preset="og" aria-pressed="false">Open Graph · 1200×630</button>
+        <button type="button" class="preset" data-preset="wide" aria-pressed="false">16:9 · 1200×675</button>
+        <button type="button" class="preset" data-preset="square" aria-pressed="false">Square · 1080×1080</button>
+        <button type="button" class="preset" data-preset="portrait" aria-pressed="false">Portrait · 1080×1350</button>
+        <button type="button" class="preset" data-preset="custom" aria-pressed="false" aria-controls="custom-size">Eigene Maße</button>
+      </div>
+
+      <fieldset id="custom-size" class="custom-size" hidden>
+        <legend>Eigene Ausgabemaße</legend>
+        <label for="custom-width">Breite
+          <input id="custom-width" type="number" min="16" max="8192" step="1" value="1200" inputmode="numeric">
+        </label>
+        <span aria-hidden="true">×</span>
+        <label for="custom-height">Höhe
+          <input id="custom-height" type="number" min="16" max="8192" step="1" value="630" inputmode="numeric">
+        </label>
+        <p id="custom-size-note" class="hint">16–8192 Pixel je Seite, maximal 16,7 Megapixel.</p>
+      </fieldset>
+
+      <div class="field-row">
+        <label for="zoom">Zoom <output id="zoom-value" for="zoom">100%</output></label>
+        <input id="zoom" type="range" min="1" max="3" step="0.01" value="1" disabled>
+      </div>
+
+      <div class="button-row">
+        <button id="reset-crop" type="button" class="secondary" disabled>Ausschnitt zurücksetzen</button>
+        <label class="toggle"><input id="circle-preview" type="checkbox" checked disabled aria-describedby="circle-note"> Kreisvorschau</label>
+      </div>
+      <p id="circle-note" class="hint" aria-live="polite">Nur Vorschau – der Export bleibt quadratisch.</p>
+
+      <h2>3. Export</h2>
+      <div class="export-grid">
+        <label>Format
+          <select id="format" disabled>
+            <option value="image/webp">WebP</option>
+            <option value="image/jpeg">JPEG</option>
+            <option value="image/png">PNG</option>
+          </select>
+        </label>
+        <label>Qualität <output id="quality-value" for="quality">85%</output>
+          <input id="quality" type="range" min="0.4" max="1" step="0.01" value="0.85" aria-describedby="quality-note" disabled>
+        </label>
+      </div>
+      <p id="quality-note" class="hint" hidden>PNG wird verlustfrei exportiert; der Qualitätsregler ist dafür nicht anwendbar.</p>
+      <p id="output-meta" class="meta">Ausgabe: 800 × 800</p>
+      <button id="download" type="button" class="primary" disabled>Bild herunterladen</button>
+      <p id="status" class="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel preview-panel" aria-labelledby="preview-title">
+      <div class="preview-heading">
+        <div>
+          <h2 id="preview-title">Vorschau</h2>
+          <p id="crop-instructions">Ziehen oder Pfeiltasten = Bild verschieben · Regler = zoomen</p>
+        </div>
+      </div>
+      <div id="canvas-wrap" class="canvas-wrap circle" data-testid="canvas-wrap">
+        <canvas id="preview" width="800" height="800" tabindex="0" aria-label="Bildvorschau und Ausschnitt" aria-describedby="crop-instructions"></canvas>
+        <div id="empty-state" class="empty-state">Bild auswählen, um zu starten.</div>
+      </div>
+      <p class="privacy-note"><strong>Privacy invariant:</strong> Bilddaten bleiben im Browser. Es gibt keinen Upload-Endpunkt.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Static-first PWA · Vanilla HTML/CSS/JS · local-only image processing</p>
+  </footer>
+</body>
+</html>
