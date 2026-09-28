@@ -1,0 +1,101 @@
+name: Deploy image-prep
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d2f9f7d8fc3b2ab2f847a7f4e9b # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    name: Deploy to production
+    needs: test
+    runs-on: ubuntu-latest
+    environment: image-prep-production
+
+    env:
+      SFTP_HOST: ${{ vars.IMAGE_PREP_SFTP_HOST }}
+      SFTP_PORT: ${{ vars.IMAGE_PREP_SFTP_PORT }}
+      SFTP_USER: ${{ vars.IMAGE_PREP_SFTP_USER }}
+      SFTP_PATH: ${{ vars.IMAGE_PREP_SFTP_PATH }}
+      SFTP_PRIVATE_KEY: ${{ secrets.IMAGE_PREP_SFTP_PRIVATE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$SFTP_PRIVATE_KEY" > ~/.ssh/image-prep
+          chmod 600 ~/.ssh/image-prep
+
+          ssh-keyscan \
+            -p "$SFTP_PORT" \
+            -H "$SFTP_HOST" \
+            >> ~/.ssh/known_hosts
+
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Test SFTP connection
+        run: |
+          printf 'pwd\nquit\n' | sftp \
+            -i ~/.ssh/image-prep \
+            -P "$SFTP_PORT" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=15 \
+            -o UpdateHostKeys=no \
+            "$SFTP_USER@$SFTP_HOST"
+
+      - name: Prepare deployment
+        run: |
+          rm -rf /tmp/image-prep-deploy
+          mkdir -p /tmp/image-prep-deploy/assets
+
+          cp index.html /tmp/image-prep-deploy/
+          cp app.js /tmp/image-prep-deploy/
+          cp styles.css /tmp/image-prep-deploy/
+          cp sw.js /tmp/image-prep-deploy/
+          cp manifest.webmanifest /tmp/image-prep-deploy/
+          cp -R assets/. /tmp/image-prep-deploy/assets/
+
+      - name: Deploy via SFTP
+        run: |
+          sftp \
+            -i ~/.ssh/image-prep \
+            -P "$SFTP_PORT" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=15 \
+            -o UpdateHostKeys=no \
+            "$SFTP_USER@$SFTP_HOST" <<EOF
+          cd $SFTP_PATH
+          put -r /tmp/image-prep-deploy/*
+          quit
+          EOF
