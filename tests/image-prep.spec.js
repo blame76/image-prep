@@ -48,6 +48,25 @@ test('loads as a local-only image tool', async ({ page }) => {
   expect(pageErrors).toEqual([]);
 });
 
+test('publishes social preview metadata and image', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'website');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Image Prep – Bilder lokal vorbereiten');
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', './assets/og-1200x630.jpg');
+  await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute('content', '1200');
+  await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '630');
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
+  await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute('content', './assets/og-1200x630.jpg');
+
+  const dimensions = await page.evaluate(async () => {
+    const image = new Image();
+    image.src = document.querySelector('meta[property="og:image"]').content;
+    await image.decode();
+    return { width: image.naturalWidth, height: image.naturalHeight };
+  });
+  expect(dimensions).toEqual({ width: 1200, height: 630 });
+});
+
 test('loads an image and enables editing', async ({ page }) => {
   await page.goto('/');
   await page.locator('#image-input').setInputFiles(fixture);
@@ -230,15 +249,39 @@ test('keeps file selection and crop controls keyboard accessible', async ({ page
   await expect(page.locator('#preview')).toHaveAccessibleName('Bildvorschau und Ausschnitt');
 });
 
+test('links the legal pages and public repository from the footer', async ({ page }) => {
+  await page.goto('/');
+  const footer = page.locator('.site-footer');
+  await expect(footer.getByRole('link', { name: 'Impressum' })).toHaveAttribute('href', './impressum.html');
+  await expect(footer.getByRole('link', { name: 'Datenschutz' })).toHaveAttribute('href', './datenschutz.html');
+  await expect(footer.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/blame76/image-prep');
+
+  await footer.getByRole('link', { name: 'Impressum' }).click();
+  await expect(page).toHaveURL(/\/impressum\.html$/);
+  await expect(page.getByRole('heading', { name: 'Impressum' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Impressum' })).toHaveAttribute('aria-current', 'page');
+
+  await page.getByRole('link', { name: 'Datenschutz' }).click();
+  await expect(page).toHaveURL(/\/datenschutz\.html$/);
+  await expect(page.getByRole('heading', { name: 'Datenschutz' })).toBeVisible();
+  await expect(page.getByText(/nicht an einen Server übertragen/)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Datenschutz' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('script')).toHaveCount(0);
+});
+
 test('reloads the app shell offline after service worker installation', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Image Prep' })).toBeVisible();
+  await page.getByRole('link', { name: 'Impressum' }).click();
+  await expect(page.getByRole('heading', { name: 'Impressum' })).toBeVisible();
   await page.context().setOffline(true);
   try {
-    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Image Prep' })).toBeVisible();
+    await page.goto('/datenschutz.html', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: 'Datenschutz' })).toBeVisible();
   } finally {
     await page.context().setOffline(false);
   }

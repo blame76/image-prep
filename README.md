@@ -29,6 +29,7 @@ URL/Server spielen für die eigentliche Bildbearbeitung keine Rolle. Das Origina
 - kein Upload
 - PWA-App-Shell / Offline-Grundlage
 - Vanilla HTML/CSS/JS
+- Impressum und Datenschutzhinweise
 
 ## Non-Goals für v0.1
 

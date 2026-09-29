@@ -1,7 +1,9 @@
-const CACHE = 'image-prep-v2';
+const CACHE = 'image-prep-v3';
 const APP_SHELL = [
   './',
   './index.html',
+  './impressum.html',
+  './datenschutz.html',
   './styles.css',
   './app.js',
   './manifest.webmanifest',
@@ -30,7 +32,7 @@ self.addEventListener('fetch', event => {
   const isNavigation = event.request.mode === 'navigate';
   if (!isNavigation && !APP_SHELL_URLS.has(url.href)) return;
 
-  const cacheKey = isNavigation ? './' : event.request;
+  const cacheKey = APP_SHELL_URLS.has(url.href) ? event.request : './';
   event.respondWith(networkFirst(event.request, cacheKey));
 });
 
