@@ -17,3 +17,6 @@ AGENTS.md
 *_PROMPT.md
 .agents/
 .codex/
+
+# Local preview generation manifest
+image-presets.json

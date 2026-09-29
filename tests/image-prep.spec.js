@@ -48,6 +48,25 @@ test('loads as a local-only image tool', async ({ page }) => {
   expect(pageErrors).toEqual([]);
 });
 
+test('publishes social preview metadata and image', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'website');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Image Prep – Bilder lokal vorbereiten');
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', './assets/og-1200x630.jpg');
+  await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute('content', '1200');
+  await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '630');
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
+  await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute('content', './assets/og-1200x630.jpg');
+
+  const dimensions = await page.evaluate(async () => {
+    const image = new Image();
+    image.src = document.querySelector('meta[property="og:image"]').content;
+    await image.decode();
+    return { width: image.naturalWidth, height: image.naturalHeight };
+  });
+  expect(dimensions).toEqual({ width: 1200, height: 630 });
+});
+
 test('loads an image and enables editing', async ({ page }) => {
   await page.goto('/');
   await page.locator('#image-input').setInputFiles(fixture);

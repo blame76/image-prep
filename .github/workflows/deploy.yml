@@ -79,7 +79,7 @@ jobs:
           rm -rf /tmp/image-prep-deploy
           mkdir -p /tmp/image-prep-deploy/assets
 
-          cp index.html /tmp/image-prep-deploy/
+          cp index.html impressum.html datenschutz.html /tmp/image-prep-deploy/
           cp app.js /tmp/image-prep-deploy/
           cp styles.css /tmp/image-prep-deploy/
           cp sw.js /tmp/image-prep-deploy/
