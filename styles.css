@@ -9,10 +9,11 @@
 body { margin: 0; min-height: 100vh; }
 button, input, select { font: inherit; }
 button, select, input[type="range"], label { cursor: pointer; }
-button:focus-visible, input:focus-visible, select:focus-visible, canvas:focus-visible { outline: 3px solid #111; outline-offset: 3px; }
+button:focus-visible, input:focus-visible, select:focus-visible, canvas:focus-visible, a:focus-visible { outline: 3px solid #111; outline-offset: 3px; }
 
 .site-header,
 .app-shell,
+.legal-shell,
 footer { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
 
 .site-header { display: flex; justify-content: space-between; gap: 24px; align-items: end; padding: 40px 0 24px; }
@@ -63,6 +64,16 @@ select { min-height: 44px; border: 2px solid #111; border-radius: 10px; backgrou
 .canvas-wrap.circle canvas { border-radius: 50%; }
 .empty-state { position: absolute; inset: 0; display: grid; place-items: center; padding: 30px; text-align: center; font-weight: 800; background: rgba(255,255,255,.9); }
 .empty-state[hidden] { display: none; }
+.site-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.site-footer p { margin: 0; }
+.site-footer nav { display: flex; gap: 14px; flex-wrap: wrap; }
+.site-footer a, .legal-content a, .legal-header a { color: inherit; text-underline-offset: .18em; }
+.site-footer a[aria-current="page"] { color: #111; font-weight: 800; }
+.legal-header { align-items: start; }
+.legal-shell { max-width: 760px; }
+.legal-content h2 { margin: 28px 0 10px; }
+.legal-content p, .legal-content address { line-height: 1.65; }
+.legal-content address { font-style: normal; }
 .privacy-note { border-top: 1px solid #ccc; padding-top: 14px; margin-bottom: 0; }
 footer { padding: 28px 0 48px; color: #555; font-size: .88rem; }
 
@@ -74,7 +85,7 @@ footer { padding: 28px 0 48px; color: #555; font-size: .88rem; }
 }
 
 @media (max-width: 480px) {
-  .site-header, .app-shell, footer { width: min(100% - 20px, 1180px); }
+  .site-header, .app-shell, .legal-shell, footer { width: min(100% - 20px, 1180px); }
   .site-header { padding-top: 24px; }
   .panel { padding: 14px; box-shadow: 3px 3px 0 #111; }
   .preset-grid, .export-grid { grid-template-columns: 1fr; }

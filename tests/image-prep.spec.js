@@ -230,15 +230,39 @@ test('keeps file selection and crop controls keyboard accessible', async ({ page
   await expect(page.locator('#preview')).toHaveAccessibleName('Bildvorschau und Ausschnitt');
 });
 
+test('links the legal pages and public repository from the footer', async ({ page }) => {
+  await page.goto('/');
+  const footer = page.locator('.site-footer');
+  await expect(footer.getByRole('link', { name: 'Impressum' })).toHaveAttribute('href', './impressum.html');
+  await expect(footer.getByRole('link', { name: 'Datenschutz' })).toHaveAttribute('href', './datenschutz.html');
+  await expect(footer.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/blame76/image-prep');
+
+  await footer.getByRole('link', { name: 'Impressum' }).click();
+  await expect(page).toHaveURL(/\/impressum\.html$/);
+  await expect(page.getByRole('heading', { name: 'Impressum' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Impressum' })).toHaveAttribute('aria-current', 'page');
+
+  await page.getByRole('link', { name: 'Datenschutz' }).click();
+  await expect(page).toHaveURL(/\/datenschutz\.html$/);
+  await expect(page.getByRole('heading', { name: 'Datenschutz' })).toBeVisible();
+  await expect(page.getByText(/nicht an einen Server übertragen/)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Datenschutz' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('script')).toHaveCount(0);
+});
+
 test('reloads the app shell offline after service worker installation', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Image Prep' })).toBeVisible();
+  await page.getByRole('link', { name: 'Impressum' }).click();
+  await expect(page.getByRole('heading', { name: 'Impressum' })).toBeVisible();
   await page.context().setOffline(true);
   try {
-    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Image Prep' })).toBeVisible();
+    await page.goto('/datenschutz.html', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: 'Datenschutz' })).toBeVisible();
   } finally {
     await page.context().setOffline(false);
   }
